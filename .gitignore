@@ -1,0 +1,18 @@
+# Dependências e artefatos comuns
+node_modules/
+dist/
+build/
+.idea/
+.vscode/
+.DS_Store
+
+# Docker
+*.tar
+**/.docker/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+

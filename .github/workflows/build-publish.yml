@@ -134,13 +134,24 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Salvar tags geradas
+        id: save-tags
+        run: |
+          TAGS="${{ steps.meta.outputs.tags }}"
+          # Pega a primeira tag (normalmente edge, latest ou tag específica)
+          FIRST_TAG=$(echo "$TAGS" | cut -d',' -f1 | tr -d ' ')
+          echo "first-tag=${FIRST_TAG}" >> $GITHUB_OUTPUT
+          echo "all-tags=${TAGS}" >> $GITHUB_OUTPUT
+          echo "Tags geradas: ${TAGS}"
+
   scan:
     needs: [discover, build]
     if: needs.discover.outputs.has-changes == 'true' && needs.build.result == 'success'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
+      matrix:
+        include: ${{ fromJSON(needs.discover.outputs.matrix) }}
     permissions:
       contents: read
       security-events: write
@@ -176,25 +187,51 @@ jobs:
         id: tag-info
         run: |
           IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            # Para tags, usa a tag específica ou latest
-            SCAN_TAG="${IMAGE_NAME}:latest"
+          # Prioriza edge para main, depois tenta outras tags
+          if [[ "${{ github.ref }}" == refs/heads/main ]]; then
+            SCAN_TAG="${IMAGE_NAME}:edge"
           elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            # Para PRs, usa a tag pr-*
             SCAN_TAG="${IMAGE_NAME}:pr-${{ github.event.pull_request.number }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # Para tags, tenta a versão específica primeiro, depois latest
+            TAG_VERSION=$(echo "${{ github.ref }}" | sed 's/refs\/tags\/v\?//')
+            SCAN_TAG="${IMAGE_NAME}:${TAG_VERSION}"
+            echo "Tentando tag específica: ${SCAN_TAG}"
           else
-            # Para main, usa edge
             SCAN_TAG="${IMAGE_NAME}:edge"
           fi
           echo "scan-tag=${SCAN_TAG}" >> $GITHUB_OUTPUT
           echo "Escaneando: ${SCAN_TAG}"
+
+      - name: Verificar se imagem está acessível
+        if: steps.check-scout.outputs.enabled == 'true'
+        id: verify-image
+        run: |
+          SCAN_TAG="${{ steps.tag-info.outputs.scan-tag }}"
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+          echo "Verificando se imagem ${SCAN_TAG} está acessível..."
+          # Tenta puxar a imagem para verificar se está disponível
+          if docker pull "${SCAN_TAG}" 2>&1; then
+            echo "✅ Imagem encontrada e acessível: ${SCAN_TAG}"
+            echo "scan-tag=${SCAN_TAG}" >> $GITHUB_OUTPUT
+          else
+            echo "Aviso: Imagem ${SCAN_TAG} não encontrada, tentando latest..."
+            LATEST_TAG="${IMAGE_NAME}:latest"
+            if docker pull "${LATEST_TAG}" 2>&1; then
+              echo "✅ Usando tag latest: ${LATEST_TAG}"
+              echo "scan-tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+            else
+              echo "::warning::Imagem não encontrada no GHCR. Scan pode falhar, mas continuando com tag original."
+              echo "scan-tag=${SCAN_TAG}" >> $GITHUB_OUTPUT
+            fi
+          fi
 
       - name: Docker Scout CVEs
         if: steps.check-scout.outputs.enabled == 'true'
         uses: docker/scout-action@v1
         with:
           command: cves
-          image: ${{ steps.tag-info.outputs.scan-tag }}
+          image: ${{ steps.verify-image.outputs.scan-tag || steps.tag-info.outputs.scan-tag }}
           only-severities: critical,high
           exit-code: true
           ignore-base: false

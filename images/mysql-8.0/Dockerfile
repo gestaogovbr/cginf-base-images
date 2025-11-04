@@ -1,4 +1,4 @@
-FROM mysql:8.0
+FROM mysql:8.0-debian
 
 LABEL org.opencontainers.image.title="mysql-8.0" \
       org.opencontainers.image.description="Imagem base MySQL 8.0 padronizada" \

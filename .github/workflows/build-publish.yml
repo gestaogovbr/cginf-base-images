@@ -16,28 +16,81 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      has-changes: ${{ steps.set-matrix.outputs.has-changes }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-      - name: Descobrir imagens
+      - name: Descobrir imagens alteradas
         id: set-matrix
         uses: actions/github-script@v7
         with:
           script: |
             const { execSync } = require('node:child_process');
-            const out = execSync("git ls-files 'images/**/Dockerfile'", { encoding: 'utf8' });
-            const lines = out.split('\n').filter(Boolean);
-            const dirs = Array.from(new Set(lines.map(p => p.replace(/\/Dockerfile$/, '') )));
-            if (dirs.length === 0) {
-              core.warning('Nenhuma imagem encontrada em images/**/Dockerfile');
+
+            // Para tags, construir todas as imagens
+            if (context.ref.startsWith('refs/tags/')) {
+              const out = execSync("git ls-files 'images/**/Dockerfile'", { encoding: 'utf8' });
+              const lines = out.split('\n').filter(Boolean);
+              const dirs = Array.from(new Set(lines.map(p => p.replace(/\/Dockerfile$/, ''))));
+              const matrix = { image: dirs };
+              core.setOutput('matrix', JSON.stringify(matrix));
+              core.setOutput('has-changes', dirs.length > 0 ? 'true' : 'false');
+              core.info(`Construindo todas as ${dirs.length} imagens (tag release)`);
+              return;
             }
-            const matrix = { image: dirs };
+
+            // Para PRs, comparar com a base branch
+            let baseRef = 'HEAD~1';
+            if (context.eventName === 'pull_request') {
+              baseRef = `origin/${context.payload.pull_request.base.ref}`;
+              execSync(`git fetch origin ${context.payload.pull_request.base.ref}`, { encoding: 'utf8' });
+            }
+
+            // Obter lista de todos os Dockerfiles
+            const allFiles = execSync("git ls-files 'images/**/Dockerfile'", { encoding: 'utf8' });
+            const allLines = allFiles.split('\n').filter(Boolean);
+            const allDirs = Array.from(new Set(allLines.map(p => p.replace(/\/Dockerfile$/, ''))));
+
+            // Verificar quais foram alterados
+            let changedFiles;
+            try {
+              changedFiles = execSync(`git diff --name-only ${baseRef} HEAD -- 'images/**/Dockerfile'`, { encoding: 'utf8' });
+            } catch (e) {
+              // Se não conseguir comparar (ex: primeiro commit), construir todas
+              core.warning('Não foi possível comparar mudanças, construindo todas as imagens');
+              const matrix = { image: allDirs };
+              core.setOutput('matrix', JSON.stringify(matrix));
+              core.setOutput('has-changes', allDirs.length > 0 ? 'true' : 'false');
+              return;
+            }
+
+            const changedLines = changedFiles.split('\n').filter(Boolean);
+
+            if (changedLines.length === 0) {
+              core.info('Nenhum Dockerfile foi alterado, pulando build');
+              const matrix = { image: [] };
+              core.setOutput('matrix', JSON.stringify(matrix));
+              core.setOutput('has-changes', 'false');
+              return;
+            }
+
+            // Extrair diretórios das imagens alteradas
+            const changedDirs = Array.from(new Set(
+              changedLines.map(p => p.replace(/\/Dockerfile$/, ''))
+            ));
+
+            core.info(`Imagens alteradas: ${changedDirs.join(', ')}`);
+            const matrix = { image: changedDirs };
             core.setOutput('matrix', JSON.stringify(matrix));
+            core.setOutput('has-changes', changedDirs.length > 0 ? 'true' : 'false');
 
   build:
     needs: discover
     runs-on: ubuntu-latest
+    if: needs.discover.outputs.has-changes == 'true'
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}

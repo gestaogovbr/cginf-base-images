@@ -110,21 +110,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Preparar nome da imagem
-        id: image-name
-        run: |
-          IMAGE_DIR="${{ matrix.image }}"
-          # Remove prefixo 'images/' se existir
-          IMAGE_NAME=$(echo "$IMAGE_DIR" | sed 's|^images/||')
-          echo "image-name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
-          echo "Nome da imagem: ${IMAGE_NAME}"
-
       - name: Definir metadados
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image-name }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
           tags: |
             type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
             type=ref,event=tag,enable=true
@@ -229,10 +220,7 @@ jobs:
       - name: Determinar tag para scan
         id: tag-info
         run: |
-          # Extrai o nome da imagem sem o prefixo 'images/'
-          IMAGE_DIR="${{ matrix.image }}"
-          IMAGE_NAME_WITHOUT_PREFIX=$(echo "$IMAGE_DIR" | sed 's|^images/||')
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME_WITHOUT_PREFIX}"
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
           echo "Nome da imagem para scan: ${IMAGE_NAME}"
           # Prioriza edge para main, depois tenta outras tags
           if [[ "${{ github.ref }}" == refs/heads/main ]]; then
@@ -255,10 +243,7 @@ jobs:
         id: verify-image
         run: |
           SCAN_TAG="${{ steps.tag-info.outputs.scan-tag }}"
-          # Extrai o nome da imagem sem o prefixo 'images/'
-          IMAGE_DIR="${{ matrix.image }}"
-          IMAGE_NAME_WITHOUT_PREFIX=$(echo "$IMAGE_DIR" | sed 's|^images/||')
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME_WITHOUT_PREFIX}"
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
           echo "Verificando se imagem ${SCAN_TAG} está acessível..."
           # Tenta puxar a imagem para verificar se está disponível
           if docker pull "${SCAN_TAG}" 2>&1; then

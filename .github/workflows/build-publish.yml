@@ -144,12 +144,18 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        include: ${{ fromJSON(needs.discover.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
     permissions:
       contents: read
       security-events: write
     steps:
+      - name: Debug - Verificar condições
+        run: |
+          echo "has-changes: ${{ needs.discover.outputs.has-changes }}"
+          echo "build.result: ${{ needs.build.result }}"
+          echo "matrix: ${{ needs.discover.outputs.matrix }}"
+          echo "matrix.image: ${{ matrix.image }}"
+
       - name: Checkout
         uses: actions/checkout@v4
 

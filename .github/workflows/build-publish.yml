@@ -169,19 +169,53 @@ jobs:
       - name: Verificar se Docker Scout está configurado
         id: check-scout
         run: |
+          echo "=== Debug Docker Scout Configuration ==="
+          if [ -n "${{ secrets.DOCKER_HUB_USERNAME }}" ]; then
+            USERNAME_LEN=${#DOCKER_HUB_USERNAME}
+            echo "✅ DOCKER_HUB_USERNAME está configurado (tamanho: ${USERNAME_LEN} caracteres)"
+            echo "Username (primeiros 3 chars): $(echo "${{ secrets.DOCKER_HUB_USERNAME }}" | cut -c1-3)***"
+          else
+            echo "❌ DOCKER_HUB_USERNAME NÃO está configurado"
+          fi
+          
           if [ -n "${{ secrets.DOCKER_HUB_TOKEN }}" ]; then
+            TOKEN_LEN=${#DOCKER_HUB_TOKEN}
+            echo "✅ DOCKER_HUB_TOKEN está configurado (tamanho: ${TOKEN_LEN} caracteres)"
+            echo "Token (primeiros 4 chars): $(echo "${{ secrets.DOCKER_HUB_TOKEN }}" | cut -c1-4)***"
+          else
+            echo "❌ DOCKER_HUB_TOKEN NÃO está configurado"
+          fi
+          echo "========================================"
+          
+          if [ -n "${{ secrets.DOCKER_HUB_TOKEN }}" ] && [ -n "${{ secrets.DOCKER_HUB_USERNAME }}" ]; then
             echo "enabled=true" >> $GITHUB_OUTPUT
+            echo "✅ Docker Scout configurado e habilitado"
           else
             echo "enabled=false" >> $GITHUB_OUTPUT
             echo "::warning::Docker Scout não configurado. Configure os secrets DOCKER_HUB_USERNAME e DOCKER_HUB_TOKEN para habilitar scan de vulnerabilidades."
+            if [ -z "${{ secrets.DOCKER_HUB_USERNAME }}" ]; then
+              echo "::warning::DOCKER_HUB_USERNAME não está configurado"
+            fi
+            if [ -z "${{ secrets.DOCKER_HUB_TOKEN }}" ]; then
+              echo "::warning::DOCKER_HUB_TOKEN não está configurado"
+            fi
           fi
+
+      - name: Debug Login Docker Hub
+        if: steps.check-scout.outputs.enabled == 'true'
+        run: |
+          echo "=== Debug Login Docker Hub ==="
+          echo "Tentando fazer login com username: ${{ secrets.DOCKER_HUB_USERNAME }}"
+          echo "Token configurado: $([ -n "${{ secrets.DOCKER_HUB_TOKEN }}" ] && echo "Sim" || echo "Não")"
+          echo "==============================="
 
       - name: Login no Docker Hub (para Docker Scout)
         if: steps.check-scout.outputs.enabled == 'true'
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME || 'githubactions' }}
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          logout: false
 
       - name: Determinar tag para scan
         id: tag-info

@@ -53,7 +53,7 @@ jobs:
             // const allFiles = execSync("git ls-files 'images/**/Dockerfile'", { encoding: 'utf8' });
             // const allLines = allFiles.split('\n').filter(Boolean);
             // const allDirs = Array.from(new Set(allLines.map(p => p.replace(/\/Dockerfile$/, ''))));
-            
+
             // Verificar quais foram alterados - TEMPORARIAMENTE DESABILITADO
             // let changedFiles;
             // try {
@@ -65,9 +65,9 @@ jobs:
             //   core.setOutput('has-changes', allDirs.length > 0 ? 'true' : 'false');
             //   return;
             // }
-            
+
             // const changedLines = changedFiles.split('\n').filter(Boolean);
-            
+
             // if (changedLines.length === 0) {
             //   core.info('Nenhum Dockerfile foi alterado, pulando build');
             //   const matrix = { image: [] };
@@ -75,11 +75,11 @@ jobs:
             //   core.setOutput('has-changes', 'false');
             //   return;
             // }
-            
+
             // const changedDirs = Array.from(new Set(
             //   changedLines.map(p => p.replace(/\/Dockerfile$/, ''))
             // ));
-            
+
             // TEMPORÁRIO: Apenas PostgreSQL
             const matrix = { image: ['images/postgres-16'] };
             core.setOutput('matrix', JSON.stringify(matrix));
@@ -115,7 +115,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image && matrix.image != '' && matrix.image != null && matrix.image || 'image' }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image && matrix.image != '' && matrix.image != null && matrix.image || 'image' | replace('images/', '') }}
           tags: |
             type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
             type=ref,event=tag,enable=true
@@ -144,7 +144,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: ['images/postgres-16']  # Temporariamente apenas PostgreSQL
+        image: ["images/postgres-16"] # Temporariamente apenas PostgreSQL
     permissions:
       contents: read
       security-events: write
@@ -220,7 +220,11 @@ jobs:
       - name: Determinar tag para scan
         id: tag-info
         run: |
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+          # Extrai o nome da imagem sem o prefixo 'images/'
+          IMAGE_DIR="${{ matrix.image }}"
+          IMAGE_NAME_WITHOUT_PREFIX=$(echo "$IMAGE_DIR" | sed 's|^images/||')
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME_WITHOUT_PREFIX}"
+          echo "Nome da imagem para scan: ${IMAGE_NAME}"
           # Prioriza edge para main, depois tenta outras tags
           if [[ "${{ github.ref }}" == refs/heads/main ]]; then
             SCAN_TAG="${IMAGE_NAME}:edge"
@@ -242,7 +246,10 @@ jobs:
         id: verify-image
         run: |
           SCAN_TAG="${{ steps.tag-info.outputs.scan-tag }}"
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+          # Extrai o nome da imagem sem o prefixo 'images/'
+          IMAGE_DIR="${{ matrix.image }}"
+          IMAGE_NAME_WITHOUT_PREFIX=$(echo "$IMAGE_DIR" | sed 's|^images/||')
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME_WITHOUT_PREFIX}"
           echo "Verificando se imagem ${SCAN_TAG} está acessível..."
           # Tenta puxar a imagem para verificar se está disponível
           if docker pull "${SCAN_TAG}" 2>&1; then

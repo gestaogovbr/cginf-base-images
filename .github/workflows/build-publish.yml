@@ -49,49 +49,47 @@ jobs:
               execSync(`git fetch origin ${context.payload.pull_request.base.ref}`, { encoding: 'utf8' });
             }
 
-            // Obter lista de todos os Dockerfiles
-            const allFiles = execSync("git ls-files 'images/**/Dockerfile'", { encoding: 'utf8' });
-            const allLines = allFiles.split('\n').filter(Boolean);
-            const allDirs = Array.from(new Set(allLines.map(p => p.replace(/\/Dockerfile$/, ''))));
-
-            // Verificar quais foram alterados
-            let changedFiles;
-            try {
-              changedFiles = execSync(`git diff --name-only ${baseRef} HEAD -- 'images/**/Dockerfile'`, { encoding: 'utf8' });
-            } catch (e) {
-              // Se não conseguir comparar (ex: primeiro commit), construir todas
-              core.warning('Não foi possível comparar mudanças, construindo todas as imagens');
-              const matrix = { image: allDirs };
-              core.setOutput('matrix', JSON.stringify(matrix));
-              core.setOutput('has-changes', allDirs.length > 0 ? 'true' : 'false');
-              return;
-            }
-
-            const changedLines = changedFiles.split('\n').filter(Boolean);
-
-            if (changedLines.length === 0) {
-              core.info('Nenhum Dockerfile foi alterado, pulando build');
-              const matrix = { image: [] };
-              core.setOutput('matrix', JSON.stringify(matrix));
-              core.setOutput('has-changes', 'false');
-              return;
-            }
-
-            // Extrair diretórios das imagens alteradas
-            const changedDirs = Array.from(new Set(
-              changedLines.map(p => p.replace(/\/Dockerfile$/, ''))
-            ));
-
-            core.info(`Imagens alteradas: ${changedDirs.join(', ')}`);
-            const matrix = { image: changedDirs };
+            // TEMPORÁRIO: Trabalhando apenas com PostgreSQL para testes
+            // const allFiles = execSync("git ls-files 'images/**/Dockerfile'", { encoding: 'utf8' });
+            // const allLines = allFiles.split('\n').filter(Boolean);
+            // const allDirs = Array.from(new Set(allLines.map(p => p.replace(/\/Dockerfile$/, ''))));
+            
+            // Verificar quais foram alterados - TEMPORARIAMENTE DESABILITADO
+            // let changedFiles;
+            // try {
+            //   changedFiles = execSync(`git diff --name-only ${baseRef} HEAD -- 'images/**/Dockerfile'`, { encoding: 'utf8' });
+            // } catch (e) {
+            //   core.warning('Não foi possível comparar mudanças, construindo todas as imagens');
+            //   const matrix = { image: allDirs };
+            //   core.setOutput('matrix', JSON.stringify(matrix));
+            //   core.setOutput('has-changes', allDirs.length > 0 ? 'true' : 'false');
+            //   return;
+            // }
+            
+            // const changedLines = changedFiles.split('\n').filter(Boolean);
+            
+            // if (changedLines.length === 0) {
+            //   core.info('Nenhum Dockerfile foi alterado, pulando build');
+            //   const matrix = { image: [] };
+            //   core.setOutput('matrix', JSON.stringify(matrix));
+            //   core.setOutput('has-changes', 'false');
+            //   return;
+            // }
+            
+            // const changedDirs = Array.from(new Set(
+            //   changedLines.map(p => p.replace(/\/Dockerfile$/, ''))
+            // ));
+            
+            // TEMPORÁRIO: Apenas PostgreSQL
+            const matrix = { image: ['images/postgres-16'] };
             core.setOutput('matrix', JSON.stringify(matrix));
-            core.setOutput('has-changes', changedDirs.length > 0 ? 'true' : 'false');
-            core.info(`Outputs definidos - has-changes: ${changedDirs.length > 0 ? 'true' : 'false'}, imagens: ${changedDirs.length}`);
+            core.setOutput('has-changes', 'true');
+            core.info('TEMPORÁRIO: Trabalhando apenas com PostgreSQL (images/postgres-16)');
 
   build:
     needs: discover
     runs-on: ubuntu-latest
-    if: needs.discover.outputs.has-changes == 'true'
+    # if: needs.discover.outputs.has-changes == 'true'  # Temporariamente desabilitado para testes
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
@@ -140,11 +138,13 @@ jobs:
 
   scan:
     needs: [discover, build]
-    if: needs.discover.outputs.has-changes == 'true' && needs.build.result == 'success'
+    # if: needs.discover.outputs.has-changes == 'true' && needs.build.result == 'success'  # Temporariamente desabilitado para testes
+    if: needs.build.result == 'success'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
+      matrix:
+        image: ['images/postgres-16']  # Temporariamente apenas PostgreSQL
     permissions:
       contents: read
       security-events: write

@@ -110,12 +110,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Preparar nome da imagem
+        id: image-name
+        run: |
+          IMAGE_DIR="${{ matrix.image }}"
+          # Remove prefixo 'images/' se existir
+          IMAGE_NAME=$(echo "$IMAGE_DIR" | sed 's|^images/||')
+          echo "image-name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "Nome da imagem: ${IMAGE_NAME}"
+
       - name: Definir metadados
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image && matrix.image != '' && matrix.image != null && matrix.image || 'image' | replace('images/', '') }}
+            ghcr.io/${{ github.repository_owner }}/${{ steps.image-name.outputs.image-name }}
           tags: |
             type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
             type=ref,event=tag,enable=true

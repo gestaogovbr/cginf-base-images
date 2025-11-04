@@ -86,6 +86,7 @@ jobs:
             const matrix = { image: changedDirs };
             core.setOutput('matrix', JSON.stringify(matrix));
             core.setOutput('has-changes', changedDirs.length > 0 ? 'true' : 'false');
+            core.info(`Outputs definidos - has-changes: ${changedDirs.length > 0 ? 'true' : 'false'}, imagens: ${changedDirs.length}`);
 
   build:
     needs: discover
@@ -135,8 +136,8 @@ jobs:
 
   scan:
     needs: [discover, build]
+    if: needs.discover.outputs.has-changes == 'true' && needs.build.result == 'success'
     runs-on: ubuntu-latest
-    if: needs.discover.outputs.has-changes == 'true'
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
@@ -206,3 +207,21 @@ jobs:
         with:
           sarif_file: docker-scout-report.sarif
           category: docker-scout
+
+  summary:
+    needs: [discover, build, scan]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Workflow Summary
+        run: |
+          echo "## Workflow Status" >> $GITHUB_STEP_SUMMARY
+          echo "- Discover: ${{ needs.discover.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Build: ${{ needs.build.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Scan: ${{ needs.scan.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.discover.outputs.has-changes }}" == "false" ]; then
+            echo "ℹ️ Nenhuma imagem foi alterada, build e scan foram pulados." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ Workflow executado com sucesso!" >> $GITHUB_STEP_SUMMARY
+          fi

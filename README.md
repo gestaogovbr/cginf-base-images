@@ -1,6 +1,6 @@
 ## cginf-base-images
 
-Repositório monorepo de imagens base da organização. Aqui mantemos imagens padronizadas (por exemplo: Node.js, Python) para acelerar e uniformizar os projetos.
+Repositório monorepo de imagens base da organização. Aqui mantemos imagens padronizadas (por exemplo: PostgreSQL, MySQL) para acelerar e uniformizar os projetos.
 
 ### Objetivos
 
@@ -12,9 +12,9 @@ Repositório monorepo de imagens base da organização. Aqui mantemos imagens pa
 
 ```
 images/
-  node-20/
+  postgres-16/
     Dockerfile
-  python-3.11/
+  mysql-8.0/
     Dockerfile
 ```
 
@@ -27,8 +27,8 @@ Cada pasta em `images/` representa uma imagem base. O nome da pasta será o nome
 
 Exemplos após publicação:
 
-- `ghcr.io/<org>/node-20:edge`
-- `ghcr.io/<org>/python-3.11:edge`
+- `ghcr.io/<org>/postgres-16:edge`
+- `ghcr.io/<org>/mysql-8.0:edge`
 
 ### Versionamento e tags
 

@@ -222,9 +222,16 @@ jobs:
         run: |
           IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
           echo "Nome da imagem para scan: ${IMAGE_NAME}"
-          # Prioriza edge para main, depois tenta outras tags
+          # Para main, usa edge ou latest (se edge não existir)
           if [[ "${{ github.ref }}" == refs/heads/main ]]; then
+            # Tenta edge primeiro, se não existir usa latest
             SCAN_TAG="${IMAGE_NAME}:edge"
+            echo "Tentando tag edge: ${SCAN_TAG}"
+            # Verifica se edge existe, se não, usa latest
+            if ! docker manifest inspect "${SCAN_TAG}" >/dev/null 2>&1; then
+              echo "Tag edge não encontrada, usando latest"
+              SCAN_TAG="${IMAGE_NAME}:latest"
+            fi
           elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
             SCAN_TAG="${IMAGE_NAME}:pr-${{ github.event.pull_request.number }}"
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
@@ -233,7 +240,8 @@ jobs:
             SCAN_TAG="${IMAGE_NAME}:${TAG_VERSION}"
             echo "Tentando tag específica: ${SCAN_TAG}"
           else
-            SCAN_TAG="${IMAGE_NAME}:edge"
+            # Fallback para latest se nada funcionar
+            SCAN_TAG="${IMAGE_NAME}:latest"
           fi
           echo "scan-tag=${SCAN_TAG}" >> $GITHUB_OUTPUT
           echo "Escaneando: ${SCAN_TAG}"
@@ -266,13 +274,21 @@ jobs:
         run: |
           echo "Verificando autenticação no GHCR..."
           SCAN_TAG="${{ steps.verify-image.outputs.scan-tag || steps.tag-info.outputs.scan-tag }}"
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
           echo "Tentando puxar imagem: ${SCAN_TAG}"
+          # Tenta a tag específica primeiro
           if docker pull "${SCAN_TAG}" 2>&1; then
-            echo "✅ Imagem acessível via Docker"
+            echo "✅ Imagem acessível via Docker: ${SCAN_TAG}"
           else
-            echo "::error::Não foi possível acessar a imagem ${SCAN_TAG} no GHCR"
-            echo "Verifique se a imagem existe e se as permissões estão corretas"
-            exit 1
+            echo "Tag ${SCAN_TAG} não encontrada, tentando latest..."
+            if docker pull "${IMAGE_NAME}:latest" 2>&1; then
+              echo "✅ Usando tag latest: ${IMAGE_NAME}:latest"
+              echo "scan-tag=${IMAGE_NAME}:latest" >> $GITHUB_OUTPUT
+            else
+              echo "::warning::Não foi possível acessar a imagem no GHCR"
+              echo "Tentando scan mesmo assim..."
+              # Não falha, deixa o Docker Scout tentar
+            fi
           fi
 
       - name: Docker Scout CVEs

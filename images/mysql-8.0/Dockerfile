@@ -5,6 +5,12 @@ LABEL org.opencontainers.image.title="mysql-8.0" \
       org.opencontainers.image.source="https://github.com/${GITHUB_REPOSITORY}" \
       org.opencontainers.image.licenses="GPL-2.0"
 
+# Expõe a porta padrão do MySQL
+EXPOSE 3306
+
+# Define volume para persistência de dados
+VOLUME ["/var/lib/mysql"]
+
 # Instala dumb-init baixando diretamente do GitHub
 # Necessário porque Oracle Linux não tem dumb-init nos repositórios padrão
 # Instala curl se necessário e baixa dumb-init

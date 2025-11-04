@@ -8,6 +8,12 @@ LABEL org.opencontainers.image.title="postgres-16" \
 ENV POSTGRES_HOST_AUTH_METHOD=md5 \
     PGDATA=/var/lib/postgresql/data/pgdata
 
+# Expõe a porta padrão do PostgreSQL
+EXPOSE 5432
+
+# Define volume para persistência de dados
+VOLUME ["/var/lib/postgresql/data"]
+
 # Instala dumb-init para melhor gerenciamento de sinais
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends dumb-init && \

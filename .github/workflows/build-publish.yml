@@ -276,6 +276,20 @@ jobs:
             fi
           fi
 
+      - name: Verificar autenticação GHCR antes do scan
+        if: steps.check-scout.outputs.enabled == 'true'
+        run: |
+          echo "Verificando autenticação no GHCR..."
+          SCAN_TAG="${{ steps.verify-image.outputs.scan-tag || steps.tag-info.outputs.scan-tag }}"
+          echo "Tentando puxar imagem: ${SCAN_TAG}"
+          if docker pull "${SCAN_TAG}" 2>&1; then
+            echo "✅ Imagem acessível via Docker"
+          else
+            echo "::error::Não foi possível acessar a imagem ${SCAN_TAG} no GHCR"
+            echo "Verifique se a imagem existe e se as permissões estão corretas"
+            exit 1
+          fi
+
       - name: Docker Scout CVEs
         if: steps.check-scout.outputs.enabled == 'true'
         uses: docker/scout-action@v1
@@ -287,6 +301,7 @@ jobs:
           ignore-base: false
           format: sarif
           output: docker-scout-report.sarif
+          account: ${{ secrets.DOCKER_HUB_USERNAME }}
 
       - name: Upload SARIF
         if: always() && steps.check-scout.outputs.enabled == 'true'

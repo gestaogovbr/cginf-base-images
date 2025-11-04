@@ -177,7 +177,7 @@ jobs:
           else
             echo "❌ DOCKER_HUB_USERNAME NÃO está configurado"
           fi
-          
+
           if [ -n "${{ secrets.DOCKER_HUB_TOKEN }}" ]; then
             TOKEN_LEN=${#DOCKER_HUB_TOKEN}
             echo "✅ DOCKER_HUB_TOKEN está configurado (tamanho: ${TOKEN_LEN} caracteres)"
@@ -186,7 +186,7 @@ jobs:
             echo "❌ DOCKER_HUB_TOKEN NÃO está configurado"
           fi
           echo "========================================"
-          
+
           if [ -n "${{ secrets.DOCKER_HUB_TOKEN }}" ] && [ -n "${{ secrets.DOCKER_HUB_USERNAME }}" ]; then
             echo "enabled=true" >> $GITHUB_OUTPUT
             echo "✅ Docker Scout configurado e habilitado"

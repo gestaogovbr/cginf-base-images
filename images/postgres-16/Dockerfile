@@ -1,4 +1,3 @@
-# Imagem base PostgreSQL 16 padronizada para projetos da organização
 FROM postgres:16
 
 LABEL org.opencontainers.image.title="postgres-16" \

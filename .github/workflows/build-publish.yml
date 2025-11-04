@@ -134,15 +134,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Salvar tags geradas
-        id: save-tags
+      - name: Log tags geradas
         run: |
-          TAGS="${{ steps.meta.outputs.tags }}"
-          # Pega a primeira tag (normalmente edge, latest ou tag específica)
-          FIRST_TAG=$(echo "$TAGS" | cut -d',' -f1 | tr -d ' ')
-          echo "first-tag=${FIRST_TAG}" >> $GITHUB_OUTPUT
-          echo "all-tags=${TAGS}" >> $GITHUB_OUTPUT
-          echo "Tags geradas: ${TAGS}"
+          echo "Tags geradas para ${{ matrix.image }}: ${{ steps.meta.outputs.tags }}"
 
   scan:
     needs: [discover, build]

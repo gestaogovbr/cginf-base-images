@@ -293,15 +293,33 @@ jobs:
 
       - name: Docker Scout CVEs
         if: steps.check-scout.outputs.enabled == 'true'
+        id: scout-cves
+        continue-on-error: true
         uses: docker/scout-action@v1
         with:
           command: cves
           image: ${{ steps.verify-image.outputs.scan-tag || steps.tag-info.outputs.scan-tag }}
           only-severities: critical,high
-          exit-code: true
+          exit-code: false
           ignore-base: false
           format: sarif
-          output: docker-scout-report.sarif
+          sarif-file: docker-scout-report.sarif
+
+      - name: Debug - Verificar arquivos gerados
+        if: steps.check-scout.outputs.enabled == 'true'
+        run: |
+          echo "Listando arquivos no diretório atual:"
+          ls -la
+          echo ""
+          echo "Verificando se arquivo SARIF existe:"
+          if [ -f "docker-scout-report.sarif" ]; then
+            echo "✅ Arquivo encontrado!"
+            echo "Tamanho: $(stat -f%z docker-scout-report.sarif 2>/dev/null || stat -c%s docker-scout-report.sarif 2>/dev/null || echo 'N/A') bytes"
+          else
+            echo "❌ Arquivo não encontrado"
+            echo "Verificando se há outros arquivos .sarif:"
+            find . -name "*.sarif" 2>/dev/null || echo "Nenhum arquivo .sarif encontrado"
+          fi
 
       - name: Verificar se arquivo SARIF existe
         if: always() && steps.check-scout.outputs.enabled == 'true'

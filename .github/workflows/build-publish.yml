@@ -580,7 +580,7 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Workflow Summary
+      - name: Generate Summary
         run: |
           echo "## Workflow Status" >> $GITHUB_STEP_SUMMARY
           echo "- Discover: ${{ needs.discover.result }}" >> $GITHUB_STEP_SUMMARY

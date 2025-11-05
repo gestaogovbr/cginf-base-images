@@ -424,6 +424,18 @@ jobs:
           exit-code: "0"
           ignore-unfixed: false
 
+      - name: Trivy Scan - Vulnerabilidades (HTML)
+        id: trivy-scan-html
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ steps.verify-image.outputs.scan-tag || steps.tag-info.outputs.scan-tag }}
+          format: "html"
+          output: "trivy-report.html"
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"
+          ignore-unfixed: false
+
       - name: Trivy Scan - Vulnerabilidades (SARIF)
         id: trivy-scan
         continue-on-error: true
@@ -448,6 +460,26 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
             echo "::warning::Arquivo trivy-report.sarif não foi gerado"
           fi
+
+      - name: Verificar se arquivo HTML do Trivy existe
+        if: always()
+        id: check-trivy-html
+        run: |
+          if [ -f "trivy-report.html" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ Arquivo HTML do Trivy encontrado"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "::warning::Arquivo trivy-report.html não foi gerado"
+          fi
+
+      - name: Upload relatório HTML do Trivy
+        if: always() && steps.check-trivy-html.outputs.exists == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report-html-${{ matrix.image }}
+          path: trivy-report.html
+          retention-days: 30
 
       - name: Upload SARIF do Trivy
         if: always() && steps.check-trivy-sarif.outputs.exists == 'true'

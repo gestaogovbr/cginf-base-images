@@ -302,7 +302,6 @@ jobs:
           ignore-base: false
           format: sarif
           output: docker-scout-report.sarif
-          account: ${{ secrets.DOCKER_HUB_USERNAME }}
 
       - name: Verificar se arquivo SARIF existe
         if: always() && steps.check-scout.outputs.enabled == 'true'

@@ -304,8 +304,20 @@ jobs:
           output: docker-scout-report.sarif
           account: ${{ secrets.DOCKER_HUB_USERNAME }}
 
-      - name: Upload SARIF
+      - name: Verificar se arquivo SARIF existe
         if: always() && steps.check-scout.outputs.enabled == 'true'
+        id: check-sarif
+        run: |
+          if [ -f "docker-scout-report.sarif" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ Arquivo SARIF encontrado"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "::warning::Arquivo docker-scout-report.sarif não foi gerado"
+          fi
+
+      - name: Upload SARIF
+        if: always() && steps.check-scout.outputs.enabled == 'true' && steps.check-sarif.outputs.exists == 'true'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: docker-scout-report.sarif

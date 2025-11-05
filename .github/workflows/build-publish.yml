@@ -542,11 +542,18 @@ jobs:
             echo "::warning::Arquivo trivy-report.html não foi gerado"
           fi
 
+      - name: Definir nome do artifact HTML
+        id: artifact-name
+        run: |
+          ARTIFACT_NAME="trivy-report-html-$(echo '${{ matrix.image }}' | tr '/' '-')"
+          echo "name=${ARTIFACT_NAME}" >> $GITHUB_OUTPUT
+          echo "Nome do artifact: ${ARTIFACT_NAME}"
+
       - name: Upload relatório HTML do Trivy
         if: always() && steps.check-trivy-html.outputs.exists == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-report-html-${{ matrix.image | replace('/', '-') }}
+          name: ${{ steps.artifact-name.outputs.name }}
           path: trivy-report.html
           retention-days: 30
 

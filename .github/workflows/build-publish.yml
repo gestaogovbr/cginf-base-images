@@ -580,16 +580,6 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download relatório HTML do Trivy
-        uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          pattern: trivy-report-html-*
-          merge-multiple: false
-
       - name: Workflow Summary
         run: |
           echo "## Workflow Status" >> $GITHUB_STEP_SUMMARY
@@ -598,17 +588,6 @@ jobs:
           echo "- Scan (Docker Scout): ${{ needs.scan.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Scan (Trivy): ${{ needs.scan-trivy.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-
-          # Adicionar relatório HTML do Trivy se disponível
-          HTML_FILE=$(find . -name "trivy-report.html" -type f | head -n 1)
-          if [ -n "$HTML_FILE" ] && [ -f "$HTML_FILE" ]; then
-            echo "## 📊 Relatório Trivy - Vulnerabilidades" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            # Extrair apenas o conteúdo do body (sem tags html/head)
-            sed -n '/<body>/,/<\/body>/p' "$HTML_FILE" | sed '1d;$d' >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-          fi
-
           if [ "${{ needs.discover.outputs.has-changes }}" == "false" ]; then
             echo "ℹ️ Nenhuma imagem foi alterada, build e scans foram pulados." >> $GITHUB_STEP_SUMMARY
           else

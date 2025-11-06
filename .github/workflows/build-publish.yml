@@ -449,115 +449,97 @@ jobs:
           <head>
             <title>Trivy Vulnerability Report</title>
             <style>
-              * { box-sizing: border-box; }
               body { 
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
                 margin: 0; 
                 padding: 20px; 
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                min-height: 100vh;
+                background-color: #f0f4f8;
               }
               .container { 
-                background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+                background-color: #ffffff;
                 padding: 30px; 
-                border-radius: 16px; 
-                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                border-radius: 8px; 
                 max-width: 1400px;
                 margin: 0 auto;
               }
               h1 { 
                 color: #2d3748; 
-                border-bottom: 4px solid;
-                border-image: linear-gradient(90deg, #667eea, #764ba2, #f093fb) 1;
+                border-bottom: 4px solid #667eea;
                 padding-bottom: 15px;
                 margin-bottom: 20px;
-                font-size: 2.2em;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+                font-size: 2em;
               }
               .info { 
                 margin: 20px 0; 
                 padding: 20px; 
-                background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+                background-color: #e6f0ff;
                 border-left: 5px solid #667eea;
                 border-radius: 8px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
               }
               .info p { margin: 8px 0; color: #2d3748; }
               .info strong { color: #667eea; }
               table { 
-                border-collapse: separate;
-                border-spacing: 0;
+                border-collapse: collapse;
                 width: 100%; 
                 margin-top: 25px;
-                border-radius: 12px;
-                overflow: hidden;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                border: 2px solid #667eea;
               }
               th, td { 
-                padding: 15px; 
+                padding: 12px; 
                 text-align: left; 
-                border-bottom: 1px solid #e2e8f0;
+                border: 1px solid #cbd5e0;
               }
               th { 
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background-color: #667eea;
                 color: white; 
-                position: sticky; 
-                top: 0;
                 font-weight: 600;
                 text-transform: uppercase;
                 font-size: 0.9em;
-                letter-spacing: 0.5px;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
               }
               tr:nth-child(even) { 
-                background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%);
+                background-color: #f7fafc;
+              }
+              tr:nth-child(odd) {
+                background-color: #ffffff;
               }
               tr:hover {
-                background: linear-gradient(to right, #e6f3ff 0%, #f0f8ff 100%);
-                transform: scale(1.01);
-                transition: all 0.2s ease;
+                background-color: #e6f0ff;
               }
               td {
                 color: #2d3748;
                 font-size: 0.95em;
               }
               .critical { 
-                background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+                background-color: #dc2626;
                 color: white; 
                 font-weight: bold;
                 padding: 6px 12px;
-                border-radius: 20px;
+                border-radius: 6px;
                 display: inline-block;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-                box-shadow: 0 2px 4px rgba(255,107,107,0.4);
               }
               .high { 
-                background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+                background-color: #ea580c;
                 color: white; 
                 font-weight: bold;
                 padding: 6px 12px;
-                border-radius: 20px;
+                border-radius: 6px;
                 display: inline-block;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-                box-shadow: 0 2px 4px rgba(255,165,0,0.4);
               }
               .medium {
-                background: linear-gradient(135deg, #ffd93d 0%, #ffcd02 100%);
-                color: #2d3748;
-                font-weight: bold;
-                padding: 6px 12px;
-                border-radius: 20px;
-                display: inline-block;
-                box-shadow: 0 2px 4px rgba(255,217,61,0.4);
-              }
-              .low {
-                background: linear-gradient(135deg, #6bcf7f 0%, #4ade80 100%);
+                background-color: #f59e0b;
                 color: white;
                 font-weight: bold;
                 padding: 6px 12px;
-                border-radius: 20px;
+                border-radius: 6px;
                 display: inline-block;
-                box-shadow: 0 2px 4px rgba(107,207,127,0.4);
+              }
+              .low {
+                background-color: #10b981;
+                color: white;
+                font-weight: bold;
+                padding: 6px 12px;
+                border-radius: 6px;
+                display: inline-block;
               }
               .no-vuln { 
                 text-align: center; 
@@ -565,9 +547,8 @@ jobs:
                 color: #059669;
                 font-weight: bold;
                 font-size: 1.2em;
-                background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-                border-radius: 12px;
-                box-shadow: 0 4px 8px rgba(5,150,105,0.2);
+                background-color: #d1fae5;
+                border-radius: 8px;
               }
               .vuln-id {
                 font-family: 'Courier New', monospace;
@@ -581,7 +562,7 @@ jobs:
               .version {
                 font-family: 'Courier New', monospace;
                 color: #4a5568;
-                background: #f7fafc;
+                background-color: #f7fafc;
                 padding: 4px 8px;
                 border-radius: 4px;
                 display: inline-block;

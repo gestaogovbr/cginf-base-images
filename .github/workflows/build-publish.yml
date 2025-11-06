@@ -576,14 +576,14 @@ jobs:
                 <p><strong>📦 Image:</strong> $IMAGE_REF</p>
                 <p><strong>📅 Scan Date:</strong> $(date -u +"%Y-%m-%d %H:%M:%S UTC")</p>
               </div>
-              <table>
+              <table style="border-collapse: collapse; width: 100%; border: 2px solid #667eea;">
                 <tr>
-                  <th>Vulnerability ID</th>
-                  <th>Severity</th>
-                  <th>Package</th>
-                  <th>Installed Version</th>
-                  <th>Fixed Version</th>
-                  <th>Title</th>
+                  <th style="background-color: #667eea; color: white; padding: 12px; text-align: left; border: 1px solid #cbd5e0; font-weight: 600;">Vulnerability ID</th>
+                  <th style="background-color: #667eea; color: white; padding: 12px; text-align: left; border: 1px solid #cbd5e0; font-weight: 600;">Severity</th>
+                  <th style="background-color: #667eea; color: white; padding: 12px; text-align: left; border: 1px solid #cbd5e0; font-weight: 600;">Package</th>
+                  <th style="background-color: #667eea; color: white; padding: 12px; text-align: left; border: 1px solid #cbd5e0; font-weight: 600;">Installed Version</th>
+                  <th style="background-color: #667eea; color: white; padding: 12px; text-align: left; border: 1px solid #cbd5e0; font-weight: 600;">Fixed Version</th>
+                  <th style="background-color: #667eea; color: white; padding: 12px; text-align: left; border: 1px solid #cbd5e0; font-weight: 600;">Title</th>
                 </tr>
           HTMLHEAD
             
@@ -593,19 +593,27 @@ jobs:
               
               if [ "$VULN_COUNT" -gt 0 ]; then
                 jq -r '.Results[]?.Vulnerabilities[]? | 
-                  "<tr>
-                    <td><span class=\"vuln-id\">\(.VulnerabilityID // "N/A")</span></td>
-                    <td><span class=\"\(.Severity // "UNKNOWN" | ascii_downcase)\">\(.Severity // "N/A")</span></td>
-                    <td><span class=\"package-name\">\(.PkgName // "N/A")</span></td>
-                    <td><span class=\"version\">\(.InstalledVersion // "N/A")</span></td>
-                    <td><span class=\"version\">\(.FixedVersion // "N/A")</span></td>
-                    <td>\(.Title // "N/A")</td>
-                  </tr>"' trivy-report.json >> trivy-report.html 2>/dev/null || true
+                  "<tr style=\"background-color: #ffffff;\">
+                    <td style=\"padding: 12px; border: 1px solid #cbd5e0; color: #667eea; font-family: monospace; font-weight: 600;\">\(.VulnerabilityID // "N/A")</td>
+                    <td style=\"padding: 12px; border: 1px solid #cbd5e0;\">
+                      \(if .Severity == "CRITICAL" then "<span style=\"background-color: #dc2626; color: white; padding: 6px 12px; border-radius: 6px; font-weight: bold; display: inline-block;\">\(.Severity)</span>"
+                        elif .Severity == "HIGH" then "<span style=\"background-color: #ea580c; color: white; padding: 6px 12px; border-radius: 6px; font-weight: bold; display: inline-block;\">\(.Severity)</span>"
+                        elif .Severity == "MEDIUM" then "<span style=\"background-color: #f59e0b; color: white; padding: 6px 12px; border-radius: 6px; font-weight: bold; display: inline-block;\">\(.Severity)</span>"
+                        elif .Severity == "LOW" then "<span style=\"background-color: #10b981; color: white; padding: 6px 12px; border-radius: 6px; font-weight: bold; display: inline-block;\">\(.Severity)</span>"
+                        else "<span style=\"background-color: #6b7280; color: white; padding: 6px 12px; border-radius: 6px; font-weight: bold; display: inline-block;\">\(.Severity // "UNKNOWN")</span>"
+                        end)
+                    </td>
+                    <td style=\"padding: 12px; border: 1px solid #cbd5e0; color: #2d3748; font-weight: 500;\">\(.PkgName // "N/A")</td>
+                    <td style=\"padding: 12px; border: 1px solid #cbd5e0;\"><span style=\"font-family: monospace; color: #4a5568; background-color: #f7fafc; padding: 4px 8px; border-radius: 4px; display: inline-block;\">\(.InstalledVersion // "N/A")</span></td>
+                    <td style=\"padding: 12px; border: 1px solid #cbd5e0;\"><span style=\"font-family: monospace; color: #4a5568; background-color: #f7fafc; padding: 4px 8px; border-radius: 4px; display: inline-block;\">\(.FixedVersion // "N/A")</span></td>
+                    <td style=\"padding: 12px; border: 1px solid #cbd5e0; color: #2d3748;\">\(.Title // "N/A")</td>
+                  </tr>"' trivy-report.json | \
+                  awk 'NR%2==0 { gsub(/background-color: #ffffff;/, "background-color: #f7fafc;"); } 1' >> trivy-report.html 2>/dev/null || true
               else
-                echo "<tr><td colspan='6' class='no-vuln'>✅ Nenhuma vulnerabilidade CRITICAL ou HIGH encontrada!</td></tr>" >> trivy-report.html
+                echo "<tr style=\"background-color: #d1fae5;\"><td colspan='6' style=\"text-align: center; padding: 40px 20px; color: #059669; font-weight: bold; font-size: 1.2em;\">✅ Nenhuma vulnerabilidade CRITICAL ou HIGH encontrada!</td></tr>" >> trivy-report.html
               fi
             else
-              echo "<tr><td colspan='6'>⚠️ jq não disponível. Instale jq para gerar relatório HTML completo.</td></tr>" >> trivy-report.html
+              echo "<tr><td colspan='6' style=\"padding: 12px; border: 1px solid #cbd5e0;\">⚠️ jq não disponível. Instale jq para gerar relatório HTML completo.</td></tr>" >> trivy-report.html
             fi
             
             echo "</table></div></body></html>" >> trivy-report.html

@@ -449,25 +449,151 @@ jobs:
           <head>
             <title>Trivy Vulnerability Report</title>
             <style>
-              body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
-              .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-              h1 { color: #333; border-bottom: 3px solid #4CAF50; padding-bottom: 10px; }
-              .info { margin: 15px 0; padding: 10px; background-color: #e8f5e9; border-left: 4px solid #4CAF50; }
-              table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-              th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-              th { background-color: #4CAF50; color: white; position: sticky; top: 0; }
-              tr:nth-child(even) { background-color: #f9f9f9; }
-              .critical { background-color: #ff6b6b; color: white; font-weight: bold; }
-              .high { background-color: #ffa500; color: white; font-weight: bold; }
-              .no-vuln { text-align: center; padding: 20px; color: #4CAF50; font-weight: bold; }
+              * { box-sizing: border-box; }
+              body { 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                margin: 0; 
+                padding: 20px; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+              }
+              .container { 
+                background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+                padding: 30px; 
+                border-radius: 16px; 
+                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+                max-width: 1400px;
+                margin: 0 auto;
+              }
+              h1 { 
+                color: #2d3748; 
+                border-bottom: 4px solid;
+                border-image: linear-gradient(90deg, #667eea, #764ba2, #f093fb) 1;
+                padding-bottom: 15px;
+                margin-bottom: 20px;
+                font-size: 2.2em;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+              }
+              .info { 
+                margin: 20px 0; 
+                padding: 20px; 
+                background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+                border-left: 5px solid #667eea;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+              }
+              .info p { margin: 8px 0; color: #2d3748; }
+              .info strong { color: #667eea; }
+              table { 
+                border-collapse: separate;
+                border-spacing: 0;
+                width: 100%; 
+                margin-top: 25px;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+              }
+              th, td { 
+                padding: 15px; 
+                text-align: left; 
+                border-bottom: 1px solid #e2e8f0;
+              }
+              th { 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white; 
+                position: sticky; 
+                top: 0;
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 0.9em;
+                letter-spacing: 0.5px;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+              }
+              tr:nth-child(even) { 
+                background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%);
+              }
+              tr:hover {
+                background: linear-gradient(to right, #e6f3ff 0%, #f0f8ff 100%);
+                transform: scale(1.01);
+                transition: all 0.2s ease;
+              }
+              td {
+                color: #2d3748;
+                font-size: 0.95em;
+              }
+              .critical { 
+                background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+                color: white; 
+                font-weight: bold;
+                padding: 6px 12px;
+                border-radius: 20px;
+                display: inline-block;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+                box-shadow: 0 2px 4px rgba(255,107,107,0.4);
+              }
+              .high { 
+                background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+                color: white; 
+                font-weight: bold;
+                padding: 6px 12px;
+                border-radius: 20px;
+                display: inline-block;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+                box-shadow: 0 2px 4px rgba(255,165,0,0.4);
+              }
+              .medium {
+                background: linear-gradient(135deg, #ffd93d 0%, #ffcd02 100%);
+                color: #2d3748;
+                font-weight: bold;
+                padding: 6px 12px;
+                border-radius: 20px;
+                display: inline-block;
+                box-shadow: 0 2px 4px rgba(255,217,61,0.4);
+              }
+              .low {
+                background: linear-gradient(135deg, #6bcf7f 0%, #4ade80 100%);
+                color: white;
+                font-weight: bold;
+                padding: 6px 12px;
+                border-radius: 20px;
+                display: inline-block;
+                box-shadow: 0 2px 4px rgba(107,207,127,0.4);
+              }
+              .no-vuln { 
+                text-align: center; 
+                padding: 40px 20px; 
+                color: #059669;
+                font-weight: bold;
+                font-size: 1.2em;
+                background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+                border-radius: 12px;
+                box-shadow: 0 4px 8px rgba(5,150,105,0.2);
+              }
+              .vuln-id {
+                font-family: 'Courier New', monospace;
+                color: #667eea;
+                font-weight: 600;
+              }
+              .package-name {
+                color: #2d3748;
+                font-weight: 500;
+              }
+              .version {
+                font-family: 'Courier New', monospace;
+                color: #4a5568;
+                background: #f7fafc;
+                padding: 4px 8px;
+                border-radius: 4px;
+                display: inline-block;
+              }
             </style>
           </head>
           <body>
             <div class="container">
-              <h1>Trivy Vulnerability Report</h1>
+              <h1>🔒 Trivy Vulnerability Report</h1>
               <div class="info">
-                <p><strong>Image:</strong> $IMAGE_REF</p>
-                <p><strong>Scan Date:</strong> $(date -u +"%Y-%m-%d %H:%M:%S UTC")</p>
+                <p><strong>📦 Image:</strong> $IMAGE_REF</p>
+                <p><strong>📅 Scan Date:</strong> $(date -u +"%Y-%m-%d %H:%M:%S UTC")</p>
               </div>
               <table>
                 <tr>
@@ -486,12 +612,14 @@ jobs:
               
               if [ "$VULN_COUNT" -gt 0 ]; then
                 jq -r '.Results[]?.Vulnerabilities[]? | 
-                  "<tr><td>\(.VulnerabilityID // "N/A")</td>
-                  <td class=\"\(.Severity // "UNKNOWN" | ascii_downcase)\">\(.Severity // "N/A")</td>
-                  <td>\(.PkgName // "N/A")</td>
-                  <td>\(.InstalledVersion // "N/A")</td>
-                  <td>\(.FixedVersion // "N/A")</td>
-                  <td>\(.Title // "N/A")</td></tr>"' trivy-report.json >> trivy-report.html 2>/dev/null || true
+                  "<tr>
+                    <td><span class=\"vuln-id\">\(.VulnerabilityID // "N/A")</span></td>
+                    <td><span class=\"\(.Severity // "UNKNOWN" | ascii_downcase)\">\(.Severity // "N/A")</span></td>
+                    <td><span class=\"package-name\">\(.PkgName // "N/A")</span></td>
+                    <td><span class=\"version\">\(.InstalledVersion // "N/A")</span></td>
+                    <td><span class=\"version\">\(.FixedVersion // "N/A")</span></td>
+                    <td>\(.Title // "N/A")</td>
+                  </tr>"' trivy-report.json >> trivy-report.html 2>/dev/null || true
               else
                 echo "<tr><td colspan='6' class='no-vuln'>✅ Nenhuma vulnerabilidade CRITICAL ou HIGH encontrada!</td></tr>" >> trivy-report.html
               fi

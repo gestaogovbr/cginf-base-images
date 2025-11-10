@@ -1,4 +1,4 @@
-FROM postgres:16
+FROM postgres:16-alpine3.20
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -18,9 +18,8 @@ ENV POSTGRES_HOST_AUTH_METHOD=md5 \
 EXPOSE 5432
 VOLUME ["/var/lib/postgresql/data"]
 
-RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends dumb-init less nano iputils-ping curl && \
-    rm -rf /var/lib/apt/lists/*
+RUN set -eux; \
+    apk add --no-cache dumb-init less nano iputils curl
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["postgres"]

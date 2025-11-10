@@ -1,11 +1,11 @@
 # postgres-16-dev
 
-Imagem base para ambientes de desenvolvimento utilizando PostgreSQL 16 a partir da imagem oficial `postgres:16-alpine3.20`.
+Imagem base para ambientes de desenvolvimento utilizando PostgreSQL 16 a partir da imagem oficial do Docker Hub.
 
 ## Características
 
-- Base `postgres:16-alpine3.20` (imagem leve baseada em Alpine).
-- Inclusão de utilitários úteis em desenvolvimento (`less`, `nano`, `curl`, `iputils`).
+- Base `postgres:16` (Debian).
+- Inclusão de utilitários úteis em desenvolvimento (`less`, `nano`, `curl`, `iputils-ping`).
 - `dumb-init` como wrapper do `docker-entrypoint.sh` padrão.
 - Porta `5432` exposta e diretório de dados padrão `/var/lib/postgresql/data`.
 

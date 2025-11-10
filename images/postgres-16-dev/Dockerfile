@@ -1,5 +1,7 @@
 FROM postgres:16
 
+# Comentário temporário para forçar rebuild da imagem postgres-16-dev
+
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION

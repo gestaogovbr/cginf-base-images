@@ -1,5 +1,7 @@
 FROM docker.io/dhi/postgres:16
 
+# Comentário temporário para forçar rebuild da imagem postgres-16-hardened
+
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION

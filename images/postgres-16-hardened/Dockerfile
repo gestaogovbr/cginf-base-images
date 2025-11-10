@@ -1,4 +1,4 @@
-FROM docker.io/cginfseges/dhi-postgres:16
+FROM cginfseges/dhi-postgres:16-alpine3.22
 
 # Comentário temporário para forçar rebuild da imagem postgres-16-hardened
 

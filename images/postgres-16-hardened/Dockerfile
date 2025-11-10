@@ -2,6 +2,8 @@ FROM cginfseges/dhi-postgres:16-alpine3.22
 
 # Comentário temporário para forçar rebuild da imagem postgres-16-hardened
 
+# Comentário adicional para testar workflow
+
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION

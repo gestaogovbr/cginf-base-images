@@ -6,6 +6,12 @@ on:
     tags: ["v*.*.*"]
   pull_request:
     branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      force_all:
+        description: "Forçar build de todas as imagens"
+        required: false
+        default: "false"
 
 permissions:
   contents: read
@@ -14,6 +20,8 @@ permissions:
 jobs:
   discover:
     runs-on: ubuntu-latest
+    env:
+      FORCE_ALL: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force_all == 'true' }}
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix || '{"include":[]}' }}
       has-changes: ${{ steps.set-matrix.outputs.has-changes || 'false' }}
@@ -34,6 +42,8 @@ jobs:
               .split('\n')
               .filter(Boolean);
 
+            const forceAll = process.env.FORCE_ALL === 'true';
+
             const toEntries = (files) => {
               const dirs = Array.from(new Set(files.map((p) => p.replace(/\/Dockerfile$/, ''))));
               return dirs.map((dir) => ({
@@ -49,6 +59,12 @@ jobs:
               core.info(`${reason}: ${list}`);
             };
 
+            if (forceAll) {
+              const entries = toEntries(listDockerfiles());
+              setMatrix(entries, 'Build forçado via workflow_dispatch');
+              return;
+            }
+
             // Para tags, construir todas as imagens
             if (context.ref.startsWith('refs/tags/')) {
               const entries = toEntries(listDockerfiles());
@@ -63,9 +79,9 @@ jobs:
               execSync(`git fetch origin ${context.payload.pull_request.base.ref}`, { encoding: 'utf8' });
             }
 
-            let changedFiles = '';
+            let changedDockerfiles = '';
             try {
-              changedFiles = execSync(`git diff --name-only ${baseRef} HEAD -- 'images/**/Dockerfile'`, { encoding: 'utf8' });
+              changedDockerfiles = execSync(`git diff --name-only ${baseRef} HEAD -- 'images/**/Dockerfile'`, { encoding: 'utf8' });
             } catch (error) {
               core.warning(`Falha ao comparar mudanças com ${baseRef}. Construindo todas as imagens.`);
               const entries = toEntries(listDockerfiles());
@@ -73,9 +89,23 @@ jobs:
               return;
             }
 
-            const changedLines = changedFiles.split('\n').filter(Boolean);
+            let changedAllFiles = '';
+            try {
+              changedAllFiles = execSync(`git diff --name-only ${baseRef} HEAD`, { encoding: 'utf8' });
+            } catch (error) {
+              core.warning(`Falha ao obter lista de arquivos alterados entre ${baseRef} e HEAD.`);
+            }
+
+            const changedLines = changedDockerfiles.split('\n').filter(Boolean);
+            const changedAll = changedAllFiles.split('\n').filter(Boolean);
 
             if (changedLines.length === 0) {
+              const workflowChanged = changedAll.some((p) => p.startsWith('.github/workflows/'));
+              if (workflowChanged) {
+                const entries = toEntries(listDockerfiles());
+                setMatrix(entries, 'Workflow alterado - rebuild completo');
+                return;
+              }
               setMatrix([], 'Nenhum Dockerfile alterado');
               return;
             }

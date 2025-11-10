@@ -141,7 +141,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login no Chainguard Registry
-        if: ${{ matrix.image_id == 'postgres-16-chainguard' && env.CHAINGUARD_USERNAME != '' && env.CHAINGUARD_PASSWORD != '' }}
+        if: ${{ matrix.image_id == 'postgres-latest-chainguard' && env.CHAINGUARD_USERNAME != '' && env.CHAINGUARD_PASSWORD != '' }}
         uses: docker/login-action@v3
         with:
           registry: cgr.dev

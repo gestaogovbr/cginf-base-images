@@ -1,12 +1,12 @@
-FROM cginfseges/dhi-postgres:16-alpine3.22
+FROM cgr.dev/chainguard/postgres:latest
 
 
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
 
-LABEL org.opencontainers.image.title="postgres-16-hardened" \
-      org.opencontainers.image.description="Imagem base PostgreSQL 16 Hardened para ambientes produtivos" \
+LABEL org.opencontainers.image.title="postgres-latest-chainguard" \
+      org.opencontainers.image.description="Imagem base PostgreSQL (tag latest) utilizando Chainguard Postgres" \
       org.opencontainers.image.source="https://github.com/${GITHUB_REPOSITORY}" \
       org.opencontainers.image.licenses="PostgreSQL" \
       org.opencontainers.image.created="${BUILD_DATE}" \
@@ -17,7 +17,7 @@ ENV PGDATA=/var/lib/postgresql/data/pgdata
 
 EXPOSE 5432
 
-# A imagem Hardened já executa como usuário não-root (postgres)
-# e possui entrypoint próprio. Mantemos apenas o comando padrão.
+# A imagem Chainguard já executa como usuário não-root (postgres)
+# e disponibiliza o entrypoint padrão.
 CMD ["postgres"]
 

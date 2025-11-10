@@ -1,0 +1,112 @@
+[1mdiff --git a/README.md b/README.md[m
+[1mindex 27d29d9..3ae7806 100644[m
+[1m--- a/README.md[m
+[1m+++ b/README.md[m
+[36m@@ -1,6 +1,6 @@[m
+ ## cginf-base-images[m
+ [m
+[31m-Repositório monorepo de imagens base da organização. Aqui mantemos imagens padronizadas (atualmente as variantes `postgres-16-dev` e `postgres-16-hardened`) para acelerar e uniformizar os projetos.[m
+[32m+[m[32mRepositório monorepo de imagens base da organização. Aqui mantemos imagens padronizadas (atualmente `postgres-16-dev`, `postgres-16-hardened` e `postgres-latest-chainguard`) para acelerar e uniformizar os projetos.[m
+ [m
+ ### Objetivos[m
+ [m
+[36m@@ -14,8 +14,13 @@[m [mRepositório monorepo de imagens base da organização. Aqui mantemos imagens pa[m
+ images/[m
+   postgres-16-dev/[m
+     Dockerfile[m
+[32m+[m[32m    README.md[m
+   postgres-16-hardened/[m
+     Dockerfile[m
+[32m+[m[32m    README.md[m
+[32m+[m[32m  postgres-latest-chainguard/[m
+[32m+[m[32m    Dockerfile[m
+[32m+[m[32m    README.md[m
+ ```[m
+ [m
+ Cada pasta em `images/` representa uma imagem base. O nome da pasta será o nome do repositório de imagem publicado no registro.[m
+[36m@@ -30,6 +35,7 @@[m [mExemplos após publicação:[m
+ [m
+ - `ghcr.io/<org>/postgres-16-dev:edge`[m
+ - `ghcr.io/<org>/postgres-16-hardened:edge`[m
+[32m+[m[32m- `ghcr.io/<org>/postgres-latest-chainguard:edge`[m
+ [m
+ ### Versionamento e tags[m
+ [m
+[36m@@ -58,6 +64,7 @@[m [mdocker run --rm <nome-local>:dev --version[m
+ [m
+ - Ação requer permissões para publicar pacotes (`packages: write`).[m
+ - O login no GHCR utiliza `GITHUB_TOKEN` padrão do GitHub Actions.[m
+[32m+[m[32m- Para imagens baseadas na Chainguard (`postgres-latest-chainguard`), configure também os secrets `CHAINGUARD_USERNAME` e `CHAINGUARD_PASSWORD` com credenciais do registry `cgr.dev`.[m
+ [m
+ ### Boas práticas para Dockerfile base[m
+ [m
+[1mdiff --git a/images/postgres-16-chainguard/Dockerfile b/images/postgres-16-chainguard/Dockerfile[m
+[1mdeleted file mode 100644[m
+[1mindex 0424e42..0000000[m
+[1m--- a/images/postgres-16-chainguard/Dockerfile[m
+[1m+++ /dev/null[m
+[36m@@ -1,22 +0,0 @@[m
+[31m-FROM cgr.dev/chainguard/postgres:latest[m
+[31m-[m
+[31m-ARG BUILD_DATE[m
+[31m-ARG VCS_REF[m
+[31m-ARG VERSION[m
+[31m-[m
+[31m-LABEL org.opencontainers.image.title="postgres-16-chainguard" \[m
+[31m-      org.opencontainers.image.description="Imagem base PostgreSQL 16 utilizando Chainguard Postgres" \[m
+[31m-      org.opencontainers.image.source="https://github.com/${GITHUB_REPOSITORY}" \[m
+[31m-      org.opencontainers.image.licenses="PostgreSQL" \[m
+[31m-      org.opencontainers.image.created="${BUILD_DATE}" \[m
+[31m-      org.opencontainers.image.revision="${VCS_REF}" \[m
+[31m-      org.opencontainers.image.version="${VERSION}"[m
+[31m-[m
+[31m-ENV PGDATA=/var/lib/postgresql/data/pgdata[m
+[31m-[m
+[31m-EXPOSE 5432[m
+[31m-[m
+[31m-# A imagem Chainguard já executa como usuário não-root (postgres)[m
+[31m-# e disponibiliza o entrypoint padrão.[m
+[31m-CMD ["postgres"][m
+[31m-[m
+[1mdiff --git a/images/postgres-16-chainguard/README.md b/images/postgres-16-chainguard/README.md[m
+[1mdeleted file mode 100644[m
+[1mindex 6155388..0000000[m
+[1m--- a/images/postgres-16-chainguard/README.md[m
+[1m+++ /dev/null[m
+[36m@@ -1,36 +0,0 @@[m
+[31m-# postgres-16-chainguard[m
+[31m-[m
+[31m-Imagem base PostgreSQL 16 construída sobre `cgr.dev/chainguard/postgres:latest`, fornecida pela Chainguard. Ideal para cenários onde se deseja aderência às melhores práticas de supply chain (SBOMs assinadas, atualizações contínuas e imagem minimalista Wolfi).[m
+[31m-[m
+[31m-## Características[m
+[31m-[m
+[31m-- Base Chainguard Wolfi com segurança reforçada e foco em redução de CVEs.[m
+[31m-- Publicação direta a partir do registry `cgr.dev`, garantindo acesso às atualizações contínuas da Chainguard.[m
+[31m-- Execução como usuário não-root (`postgres`) por padrão.[m
+[31m-- Entrypoint original mantido, facilitando compatibilidade com variáveis do `docker-entrypoint.sh` oficial.[m
+[31m-- Labels OCI prontos para enriquecimento via argumentos de build (`BUILD_DATE`, `VCS_REF`, `VERSION`).[m
+[31m-[m
+[31m-## Requisitos[m
+[31m-[m
+[31m-- Conta gratuita na Chainguard.[m
+[31m-- Token válido para o registry `cgr.dev` (defina como secrets `CHAINGUARD_USERNAME` e `CHAINGUARD_PASSWORD` no GitHub Actions para builds automatizados).[m
+[31m-- Configurar `POSTGRES_PASSWORD` ou secrets equivalentes antes da subida do contêiner.[m
+[31m-- Garantir que volumes montados concedam permissões ao usuário `postgres` (UID 26 na imagem Chainguard).[m
+[31m-[m
+[31m-## Variáveis de Ambiente suportadas[m
+[31m-[m
+[31m-A imagem mantém compatibilidade com as variáveis padrão do PostgreSQL (`POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_PASSWORD`, `POSTGRES_INITDB_ARGS`, etc.). Ajuste `PGDATA` caso precise alterar o diretório de dados.[m
+[31m-[m
+[31m-## Exemplo de build e execução[m
+[31m-[m
+[31m-```bash[m
+[31m-docker login cgr.dev -u <username> -p <token>[m
+[31m-docker build -t ghcr.io/<org>/postgres-16-chainguard:local images/postgres-16-chainguard[m
+[31m-docker run --rm -e POSTGRES_PASSWORD=senha-forte -p 5432:5432 ghcr.io/<org>/postgres-16-chainguard:local[m
+[31m-```[m
+[31m-[m
+[31m-## Boas práticas[m
+[31m-[m
+[31m-- Utilize scanners (Trivy, Docker Scout) para validar ausência de CVEs após cada build.[m
+[31m-- Combine com políticas de execução endurecidas (`--read-only`, `--cap-drop=ALL`, secrets externos).[m
+[31m-- Atualize regularmente os tokens Chainguard para evitar falhas de autenticação durante o build.[m

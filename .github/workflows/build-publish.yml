@@ -116,6 +116,9 @@ jobs:
   build:
     needs: discover
     runs-on: ubuntu-latest
+    env:
+      CHAINGUARD_USERNAME: ${{ secrets.CHAINGUARD_USERNAME }}
+      CHAINGUARD_PASSWORD: ${{ secrets.CHAINGUARD_PASSWORD }}
     if: needs.discover.outputs.has-changes == 'true'
     strategy:
       fail-fast: false
@@ -136,6 +139,14 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login no Chainguard Registry
+        if: ${{ matrix.image_id == 'postgres-16-chainguard' && env.CHAINGUARD_USERNAME != '' && env.CHAINGUARD_PASSWORD != '' }}
+        uses: docker/login-action@v3
+        with:
+          registry: cgr.dev
+          username: ${{ env.CHAINGUARD_USERNAME }}
+          password: ${{ env.CHAINGUARD_PASSWORD }}
 
       - name: Login no Docker Hub
         if: ${{ matrix.image_id == 'postgres-16-hardened' }}

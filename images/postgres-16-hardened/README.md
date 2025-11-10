@@ -1,10 +1,10 @@
 # postgres-16-hardened
 
-Imagem base Hardened para PostgreSQL 16, construída sobre `docker.io/dhi/postgres:16` (Docker Hardened Images).
+Imagem base Hardened para PostgreSQL 16, construída sobre o espelho interno `docker.io/cginfseges/dhi-postgres:16` (mirror do catálogo Docker Hardened Images).
 
 ## Características
 
-- Base Hardened com superfície mínima e foco em CVEs zero-day.
+- Base Hardened com superfície mínima e foco em CVEs zero-day, espelhada em `cginfseges/dhi-postgres` para facilitar o acesso via Docker Hub.
 - Execução como usuário não-root (`postgres`) por padrão.
 - Entrypoint original da imagem Hardened preservado.
 - Porta `5432` exposta; diretório padrão de dados `/var/lib/postgresql/data`.

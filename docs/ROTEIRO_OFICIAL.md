@@ -12,6 +12,7 @@ Este guia orienta todo o ciclo de vida das imagens base mantidas no repositório
 
 - `postgres-16-dev`: variante baseada na imagem oficial do PostgreSQL para desenvolvimento.
 - `postgres-16-hardened`: variante Hardened (Docker Hardened Images) destinada a ambientes produtivos.
+  - Base construída a partir do espelho privado/publicado em `cginfseges/dhi-postgres`, garantindo acesso sem depender do registry original.
 
 ## 2. Estrutura de Diretórios
 

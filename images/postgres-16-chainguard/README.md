@@ -1,6 +1,6 @@
 # postgres-16-chainguard
 
-Imagem base PostgreSQL 16 construída sobre `cgr.dev/chainguard/postgres:16`, fornecida pela Chainguard. Ideal para cenários onde se deseja aderência às melhores práticas de supply chain (SBOMs assinadas, atualizações contínuas e imagem minimalista Wolfi).
+Imagem base PostgreSQL 16 construída sobre `cgr.dev/chainguard/postgres:latest`, fornecida pela Chainguard. Ideal para cenários onde se deseja aderência às melhores práticas de supply chain (SBOMs assinadas, atualizações contínuas e imagem minimalista Wolfi).
 
 ## Características
 

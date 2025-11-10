@@ -1,4 +1,4 @@
-FROM cgr.dev/chainguard/postgres:16
+FROM cgr.dev/chainguard/postgres:latest
 
 ARG BUILD_DATE
 ARG VCS_REF

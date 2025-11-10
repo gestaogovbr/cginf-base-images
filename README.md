@@ -1,6 +1,6 @@
 ## cginf-base-images
 
-Repositório monorepo de imagens base da organização. Aqui mantemos imagens padronizadas (por exemplo: PostgreSQL, MySQL) para acelerar e uniformizar os projetos.
+Repositório monorepo de imagens base da organização. Aqui mantemos imagens padronizadas (atualmente as variantes `postgres-16-dev` e `postgres-16-hardened`) para acelerar e uniformizar os projetos.
 
 ### Objetivos
 
@@ -12,13 +12,14 @@ Repositório monorepo de imagens base da organização. Aqui mantemos imagens pa
 
 ```
 images/
-  postgres-16/
+  postgres-16-dev/
     Dockerfile
-  mysql-8.0/
+  postgres-16-hardened/
     Dockerfile
 ```
 
 Cada pasta em `images/` representa uma imagem base. O nome da pasta será o nome do repositório de imagem publicado no registro.
+No caso de variações (como `postgres-16-dev` e `postgres-16-hardened`), utilize tags distintas no registro para indicar o destino (desenvolvimento vs produção).
 
 ### Registro de imagens
 
@@ -27,8 +28,8 @@ Cada pasta em `images/` representa uma imagem base. O nome da pasta será o nome
 
 Exemplos após publicação:
 
-- `ghcr.io/<org>/postgres-16:edge`
-- `ghcr.io/<org>/mysql-8.0:edge`
+- `ghcr.io/<org>/postgres-16-dev:edge`
+- `ghcr.io/<org>/postgres-16-hardened:edge`
 
 ### Versionamento e tags
 

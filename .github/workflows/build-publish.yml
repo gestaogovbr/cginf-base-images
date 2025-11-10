@@ -15,8 +15,8 @@ jobs:
   discover:
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-      has-changes: ${{ steps.set-matrix.outputs.has-changes }}
+      matrix: ${{ steps.set-matrix.outputs.matrix || '{"include":[]}' }}
+      has-changes: ${{ steps.set-matrix.outputs.has-changes || 'false' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,15 +30,29 @@ jobs:
           script: |
             const { execSync } = require('node:child_process');
 
+            const listDockerfiles = () => execSync("git ls-files 'images/**/Dockerfile'", { encoding: 'utf8' })
+              .split('\n')
+              .filter(Boolean);
+
+            const toEntries = (files) => {
+              const dirs = Array.from(new Set(files.map((p) => p.replace(/\/Dockerfile$/, ''))));
+              return dirs.map((dir) => ({
+                image_id: dir.split('/').pop(),
+                context: dir,
+              }));
+            };
+
+            const setMatrix = (entries, reason) => {
+              core.setOutput('matrix', JSON.stringify({ include: entries }));
+              core.setOutput('has-changes', entries.length > 0 ? 'true' : 'false');
+              const list = entries.map((entry) => entry.image_id).join(', ') || '(nenhuma)';
+              core.info(`${reason}: ${list}`);
+            };
+
             // Para tags, construir todas as imagens
             if (context.ref.startsWith('refs/tags/')) {
-              const out = execSync("git ls-files 'images/**/Dockerfile'", { encoding: 'utf8' });
-              const lines = out.split('\n').filter(Boolean);
-              const dirs = Array.from(new Set(lines.map(p => p.replace(/\/Dockerfile$/, ''))));
-              const matrix = { image: dirs };
-              core.setOutput('matrix', JSON.stringify(matrix));
-              core.setOutput('has-changes', dirs.length > 0 ? 'true' : 'false');
-              core.info(`Construindo todas as ${dirs.length} imagens (tag release)`);
+              const entries = toEntries(listDockerfiles());
+              setMatrix(entries, `Construindo todas as ${entries.length} imagens (tag release)`);
               return;
             }
 
@@ -49,47 +63,30 @@ jobs:
               execSync(`git fetch origin ${context.payload.pull_request.base.ref}`, { encoding: 'utf8' });
             }
 
-            // TEMPORÁRIO: Trabalhando apenas com PostgreSQL para testes
-            // const allFiles = execSync("git ls-files 'images/**/Dockerfile'", { encoding: 'utf8' });
-            // const allLines = allFiles.split('\n').filter(Boolean);
-            // const allDirs = Array.from(new Set(allLines.map(p => p.replace(/\/Dockerfile$/, ''))));
+            let changedFiles = '';
+            try {
+              changedFiles = execSync(`git diff --name-only ${baseRef} HEAD -- 'images/**/Dockerfile'`, { encoding: 'utf8' });
+            } catch (error) {
+              core.warning(`Falha ao comparar mudanças com ${baseRef}. Construindo todas as imagens.`);
+              const entries = toEntries(listDockerfiles());
+              setMatrix(entries, 'Fallback para todas as imagens');
+              return;
+            }
 
-            // Verificar quais foram alterados - TEMPORARIAMENTE DESABILITADO
-            // let changedFiles;
-            // try {
-            //   changedFiles = execSync(`git diff --name-only ${baseRef} HEAD -- 'images/**/Dockerfile'`, { encoding: 'utf8' });
-            // } catch (e) {
-            //   core.warning('Não foi possível comparar mudanças, construindo todas as imagens');
-            //   const matrix = { image: allDirs };
-            //   core.setOutput('matrix', JSON.stringify(matrix));
-            //   core.setOutput('has-changes', allDirs.length > 0 ? 'true' : 'false');
-            //   return;
-            // }
+            const changedLines = changedFiles.split('\n').filter(Boolean);
 
-            // const changedLines = changedFiles.split('\n').filter(Boolean);
+            if (changedLines.length === 0) {
+              setMatrix([], 'Nenhum Dockerfile alterado');
+              return;
+            }
 
-            // if (changedLines.length === 0) {
-            //   core.info('Nenhum Dockerfile foi alterado, pulando build');
-            //   const matrix = { image: [] };
-            //   core.setOutput('matrix', JSON.stringify(matrix));
-            //   core.setOutput('has-changes', 'false');
-            //   return;
-            // }
-
-            // const changedDirs = Array.from(new Set(
-            //   changedLines.map(p => p.replace(/\/Dockerfile$/, ''))
-            // ));
-
-            // TEMPORÁRIO: Apenas PostgreSQL
-            const matrix = { image: ['images/postgres-16'] };
-            core.setOutput('matrix', JSON.stringify(matrix));
-            core.setOutput('has-changes', 'true');
-            core.info('TEMPORÁRIO: Trabalhando apenas com PostgreSQL (images/postgres-16)');
+            const entries = toEntries(changedLines);
+            setMatrix(entries, 'Imagens alteradas detectadas');
 
   build:
     needs: discover
     runs-on: ubuntu-latest
-    # if: needs.discover.outputs.has-changes == 'true'  # Temporariamente desabilitado para testes
+    if: needs.discover.outputs.has-changes == 'true'
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
@@ -115,7 +112,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image_id }}
           tags: |
             type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
             type=ref,event=tag,enable=true
@@ -126,7 +123,7 @@ jobs:
       - name: Build e Push
         uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.image }}
+          context: ${{ matrix.context }}
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
@@ -134,17 +131,15 @@ jobs:
 
       - name: Log tags geradas
         run: |
-          echo "Tags geradas para ${{ matrix.image }}: ${{ steps.meta.outputs.tags }}"
+          echo "Tags geradas para ${{ matrix.image_id }}: ${{ steps.meta.outputs.tags }}"
 
   scan:
     needs: [discover, build]
-    # if: needs.discover.outputs.has-changes == 'true' && needs.build.result == 'success'  # Temporariamente desabilitado para testes
-    if: needs.build.result == 'success'
+    if: needs.discover.outputs.has-changes == 'true' && needs.build.result == 'success'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        image: ["images/postgres-16"] # Temporariamente apenas PostgreSQL
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
     permissions:
       contents: read
       security-events: write
@@ -154,7 +149,7 @@ jobs:
           echo "has-changes: ${{ needs.discover.outputs.has-changes }}"
           echo "build.result: ${{ needs.build.result }}"
           echo "matrix: ${{ needs.discover.outputs.matrix }}"
-          echo "matrix.image: ${{ matrix.image }}"
+          echo "matrix.image_id: ${{ matrix.image_id }}"
 
       - name: Checkout
         uses: actions/checkout@v4
@@ -220,7 +215,7 @@ jobs:
       - name: Determinar tag para scan
         id: tag-info
         run: |
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image_id }}"
           echo "Nome da imagem para scan: ${IMAGE_NAME}"
           # Para main, usa edge ou latest (se edge não existir)
           if [[ "${{ github.ref }}" == refs/heads/main ]]; then
@@ -251,7 +246,7 @@ jobs:
         id: verify-image
         run: |
           SCAN_TAG="${{ steps.tag-info.outputs.scan-tag }}"
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image_id }}"
           echo "Verificando se imagem ${SCAN_TAG} está acessível..."
           # Tenta puxar a imagem para verificar se está disponível
           if docker pull "${SCAN_TAG}" 2>&1; then
@@ -274,7 +269,7 @@ jobs:
         run: |
           echo "Verificando autenticação no GHCR..."
           SCAN_TAG="${{ steps.verify-image.outputs.scan-tag || steps.tag-info.outputs.scan-tag }}"
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image_id }}"
           echo "Tentando puxar imagem: ${SCAN_TAG}"
           # Tenta a tag específica primeiro
           if docker pull "${SCAN_TAG}" 2>&1; then
@@ -342,12 +337,11 @@ jobs:
 
   scan-trivy:
     needs: [discover, build]
-    if: needs.build.result == 'success'
+    if: needs.discover.outputs.has-changes == 'true' && needs.build.result == 'success'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        image: ["images/postgres-16"] # Temporariamente apenas PostgreSQL
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
     permissions:
       contents: read
       security-events: write
@@ -365,7 +359,7 @@ jobs:
       - name: Determinar tag para scan
         id: tag-info
         run: |
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image_id }}"
           echo "Nome da imagem para scan Trivy: ${IMAGE_NAME}"
           # Para main, usa edge ou latest (se edge não existir)
           if [[ "${{ github.ref }}" == refs/heads/main ]]; then
@@ -395,7 +389,7 @@ jobs:
         id: verify-image
         run: |
           SCAN_TAG="${{ steps.tag-info.outputs.scan-tag }}"
-          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}"
+          IMAGE_NAME="ghcr.io/${{ github.repository_owner }}/${{ matrix.image_id }}"
           echo "Verificando se imagem ${SCAN_TAG} está acessível..."
           # Tenta puxar a imagem para verificar se está disponível
           if docker pull "${SCAN_TAG}" 2>&1; then
@@ -662,7 +656,7 @@ jobs:
       - name: Definir nome do artifact HTML
         id: artifact-name
         run: |
-          ARTIFACT_NAME="trivy-report-html-$(echo '${{ matrix.image }}' | tr '/' '-')"
+          ARTIFACT_NAME="trivy-report-html-${{ matrix.image_id }}"
           echo "name=${ARTIFACT_NAME}" >> $GITHUB_OUTPUT
           echo "Nome do artifact: ${ARTIFACT_NAME}"
 

@@ -1,0 +1,24 @@
+# Patterns to ignore when building packages.
+# This supports shell glob matching, relative path matching, and
+# negation (prefixed with !). Only one pattern per line.
+
+.DS_Store
+# Common VCS dirs
+.git/
+.gitignore
+.svn/
+.hg/
+# IDE files
+.vscode/
+.idea/
+
+# Backup & temp files
+*.swp
+*.bak
+*.tmp
+*.orig
+
+# Charts generated locally
+charts/
+Chart.lock
+

@@ -1,0 +1,25 @@
+Obrigado por instalar o chart **postgres-16-dev**!
+
+Para conectar-se ao banco:
+
+1. Obtenha o endpoint (para serviços ClusterIP, faça port-forward):
+
+   ```bash
+   kubectl port-forward svc/{{ include "postgres-16-dev.fullname" . }} 5432:{{ .Values.service.port }}
+   ```
+
+2. Recuperar a senha configurada:
+
+   ```bash
+   kubectl get secret {{ include "postgres-16-dev.authSecretName" . }} -o jsonpath='{.data.{{ .Values.auth.secretKey }}}' | base64 -d
+   ```
+
+3. Conectar utilizando psql:
+
+   ```bash
+   PGPASSWORD=$(kubectl get secret {{ include "postgres-16-dev.authSecretName" . }} -o jsonpath='{.data.{{ .Values.auth.secretKey }}}' | base64 -d) \
+   psql -h localhost -U {{ .Values.auth.username }} {{ if .Values.auth.database }}{{ .Values.auth.database }}{{ else }}postgres{{ end }}
+   ```
+
+> ⚠️ Lembre-se de alterar `auth.password` ou apontar `auth.existingSecret` antes de usar em ambientes reais.
+

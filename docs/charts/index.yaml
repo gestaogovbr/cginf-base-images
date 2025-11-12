@@ -1,0 +1,27 @@
+apiVersion: v1
+entries:
+  postgres-16-dev:
+  - annotations:
+      category: database
+    apiVersion: v2
+    appVersion: "16"
+    created: "2025-11-11T22:22:02.5221677-03:00"
+    description: Helm chart para implantação da imagem base PostgreSQL 16 utilizada
+      em ambientes de desenvolvimento.
+    digest: 3bbba948c95d1d0af64ea75d1f5c620f94af3a9ec038b7bf05be224cb10d97db
+    home: https://github.com/cginfseges/cginf-base-images
+    keywords:
+    - postgres
+    - database
+    - development
+    maintainers:
+    - email: devops@cginf.gov.br
+      name: CGINF
+    name: postgres-16-dev
+    sources:
+    - https://github.com/cginfseges/cginf-base-images/tree/main/images/postgres-16-dev
+    type: application
+    urls:
+    - https://cginfseges.github.io/cginf-base-images/charts/postgres-16-dev-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-11-11T22:22:02.5221677-03:00"

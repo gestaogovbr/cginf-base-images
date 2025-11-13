@@ -37,6 +37,57 @@ Exemplos após publicação:
 - `ghcr.io/<org>/postgres-16-hardened:edge`
 - `ghcr.io/<org>/postgres-latest-chainguard:edge`
 
+### Repositório Helm Central
+
+- Os charts ficam versionados em `helm/<chart-name>/` e empacotados em `docs/charts/`.
+- O índice público está em `docs/charts/index.yaml`, publicado via GitHub Pages em `https://gestaogovbr.github.io/cginf-base-images/charts`.
+- Cada novo `.tgz` gerado deve ser commitado junto ao índice para manter o repositório Helm sincronizado.
+
+#### Fluxo de empacotamento
+
+```bash
+# 1. Gere o pacote (ajuste a versão em helm/<chart>/Chart.yaml antes)
+helm package helm/postgres-16-dev --destination docs/charts
+
+# 2. Atualize o índice do repositório Helm
+helm repo index docs/charts --url https://gestaogovbr.github.io/cginf-base-images/charts
+```
+
+- Os comandos acima sobrescrevem `docs/charts/index.yaml` mesclando o histórico existente com o novo pacote.
+- Garanta que o arquivo `docs/charts/postgres-16-dev-<versão>.tgz` e o índice atualizados sejam versionados no Git.
+
+#### Como consumir o repositório Helm
+
+```bash
+helm repo add cginf-base https://gestaogovbr.github.io/cginf-base-images/charts
+helm repo update
+helm search repo cginf-base
+```
+
+Instalação básica do chart `postgres-16-dev`:
+
+```bash
+helm install my-postgres-dev cginf-base/postgres-16-dev \
+  --namespace dev-db --create-namespace \
+  --set auth.password=super-segura \
+  --set persistence.size=20Gi
+```
+
+- Para customizações complexas, utilize um arquivo `values-dev.yaml` e aplique com `-f values-dev.yaml`.
+
+#### Principais atributos técnicos (`values.yaml`)
+
+- `image.repository`, `image.tag`, `image.pullPolicy`: imagem padrão `ghcr.io/cginfseges/postgres-16-dev:edge`.
+- `service.type`, `service.port`: expõem o PostgreSQL (default `ClusterIP:5432`).
+- `auth.*`: credenciais padrão (`postgres/postgres`); recomenda-se sobrescrever ou usar `auth.existingSecret`.
+- `persistence.enabled`, `persistence.size`, `persistence.storageClass`: volume persistente de 8Gi habilitado por padrão.
+- `resources`: limites/requisições de CPU e memória (vazio por padrão).
+- `livenessProbe` / `readinessProbe`: sondas ativadas com atrasos iniciais de 30s e 10s.
+- `metrics.enabled`: desativado por padrão; habilite para expor métricas (exige exporter).
+- `volumePermissions.enabled`: false por padrão; habilite em clusters que exigem ajuste de permissões ao montar PVCs.
+
+> Consulte `helm/postgres-16-dev/values.yaml` para a lista completa e detalhes adicionais.
+
 ### Versionamento e tags
 
 - Usamos semver nas tags git (`vX.Y.Z`).
